@@ -9,7 +9,7 @@ const int echo = D5;
 const int bz = D6;
 unsigned long startTime = 0;
 bool isSignaling;
-
+int distance;
 void setup() {
   lcd.init();
   lcd.backlight();
@@ -20,72 +20,44 @@ void setup() {
 }
 
 void loop() {
+  do_KC();                                         // do khoang cach = distance;
+  distance = constrain(distance, 0, 10);           // gioi han kc tu 0-10cm, thay doi gia tri cho phu hop nghe
+  int food_amount = map(distance, 0, 10, 100, 0);  // convert luong thuc an tu khoang cach theo ti le %, vd: kc la 10(max) la khong con thuc an -> luong_thuc_an = 0
+
+  lcd.setCursor(2, 0);
+  lcd.print("LUONG THUC AN");
+  lcd.setCursor(7, 1);
+  lcd.print("   ");
+  lcd.print(food_amount);
+  int pre_time = millis();
+  if (food_amount == 0)  // het thuc an
+  {
+    // bao
+    while (millis() - pre_time < 2000)  // cho bao 2s
+    {
+      digitalWrite(bz, 1);
+      delay(100);
+      digitalWrite(bz, 0);
+      delay(100);
+      //lcd.clear();
+    }
+  }
+}
+
+int do_KC() {
   unsigned long duration;
   int distance;
-  
+
   digitalWrite(trig, LOW);
   delayMicroseconds(3);
   digitalWrite(trig, HIGH);
   delayMicroseconds(5);
   digitalWrite(trig, LOW);
   delayMicroseconds(3);
-  
+
   duration = pulseIn(echo, HIGH);
   distance = duration / 2 / 29.412;
-  
-  lcd.setCursor(0, 0);
-  lcd.print("DISTANCE:");
-  lcd.setCursor(14, 1);
-  lcd.print("cm");
-  
-  if (distance < 10) {
-    lcd.setCursor(11, 1);
-    lcd.print("  ");
-    lcd.print(distance);
-    stopSignaling();  // Dừng báo hiệu nếu khoảng cách nhỏ hơn 10
-    delay(1000);
-  } else if (distance < 100) {
-    lcd.setCursor(11, 1);
-    lcd.print(" ");
-    lcd.print(distance);
-    unsigned long startTime = millis();
-    isSignaling = true;
-    while ((isSignaling = true)&&(millis() - startTime) < 2000) {
-      Serial.println("Coi đang bật");
-      digitalWrite(bz, HIGH);
-      delay(200);
-      digitalWrite(bz, LOW);
-      delay(200);
-      digitalWrite(bz, HIGH);
-    } 
-    isSignaling = false;
-    
-    //startSignaling();  // Bắt đầu báo hiệu nếu khoảng cách từ 10 đến 99
-    delay(1000);
-  } else {
-    lcd.setCursor(11, 1);
-    lcd.print(distance);
-    // startSignaling();  // Bắt đầu báo hiệu nếu khoảng cách lớn hơn hoặc bằng 100
-    // delay(1000);
-  }
-}
 
-// void startSignaling() {
-//  if (isSignaling = true ) {
-//   while ((millis() - startTime) < 2000) {
-//     Serial.println("Coi đang bật");
-//     digitalWrite(bz, HIGH);
-//     delay(200);
-//     digitalWrite(bz, LOW);
-//     delay(200);
-//     digitalWrite(bz, HIGH);
-//   } 
-//   isSignaling = false;
-//  }
-// }
-void stopSignaling() {
-  digitalWrite(bz, LOW);
-  Serial.println("Coi đã tắt");
-  isSignaling = false;
+  return distance;
 }
 
